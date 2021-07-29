@@ -42,13 +42,12 @@ def prepare_name(name) -> str:
     return temp_name
 
 
-def similarity(s1, s2):
+def similarity(s1, s2) -> float:
     matcher = difflib.SequenceMatcher(None, s1, s2)
     return matcher.ratio()
 
 
-def calculate_name_distance(name_1, name_2, translate_eng=True):
-
+def convert_name(name_1, name_2, translate_eng=True):
     name_1 = prepare_name(name_1).split()
     name_2 = prepare_name(name_2).split()
 
@@ -56,14 +55,34 @@ def calculate_name_distance(name_1, name_2, translate_eng=True):
         name_1 = list(map(lambda x: transliterate(x), name_1))
         name_2 = list(map(lambda x: transliterate(x), name_2))
 
+    return name_1, name_2
+
+
+def mix_list(list_name) -> list:
+    """
+    Append first element of list to list
+    :param list_name:
+    :return:
+    """
+    first_element = list_name[0]
+    list_name = list_name[1:]
+    list_name.append(first_element)
+    return list_name
+
+
+def calculate_name_distance(name_1, name_2) -> bool:
+
     mismatch_matrix = np.zeros((len(name_1)))
     bool_mismatch_matrix = np.zeros((len(name_1)))
+    count = 0
 
     for i in range(len(name_1)):
-
         if len(name_1[i]) > 2 and len(name_2[i]) > 2:
             mismatch_matrix[i] = similarity(name_1[i], name_2[i])
-            bool_mismatch_matrix[i] = similarity(name_1[i], name_2[i]) > 0.7
+            if len(name_1[i]) or len(name_2[i]):
+                bool_mismatch_matrix[i] = similarity(name_1[i], name_2[i]) > 0.8
+            else:
+                bool_mismatch_matrix[i] = similarity(name_1[i], name_2[i]) > 0.7
 
         elif 0 < len(name_1[i]) <= 2 or 0 < len(name_2[i]) <= 2:
             short_word = name_1[i] if len(name_1[i]) <= len(name_2[i]) else name_2[i]
@@ -76,23 +95,59 @@ def calculate_name_distance(name_1, name_2, translate_eng=True):
                 mismatch_matrix[i] = 0
                 bool_mismatch_matrix[i] = False
 
-    print(mismatch_matrix)
     if bool_mismatch_matrix.all():
         return True
     else:
-        return False
+        count += 1
+        if count < len(name_1):
+            return calculate_name_distance(mix_list(name_1), name_2)
+        else:
+            return False
 
 
-string_1 = 'Волков Е.'
-string_2 = 'Волкока Евгений'
 
-print(calculate_name_distance(string_1, string_2))
+string_1 = 'Е Кебаб'
+string_2 = 'keybab Е'
 
+string_1, string_2 = convert_name(string_1, string_2)
 
-q = string_1.split()
-test = list(map(lambda x: transliterate(x), q))
-print(test)
-
+# def calculate_name_distance(name_1, name_2, translate_eng=True):
+#
+#     name_1 = prepare_name(name_1).split()
+#     name_2 = prepare_name(name_2).split()
+#
+#     if translate_eng:
+#         name_1 = list(map(lambda x: transliterate(x), name_1))
+#         name_2 = list(map(lambda x: transliterate(x), name_2))
+#
+#     mismatch_matrix = np.zeros((len(name_1)))
+#     bool_mismatch_matrix = np.zeros((len(name_1)))
+#
+#     for i in range(len(name_1)):
+#
+#         if len(name_1[i]) > 2 and len(name_2[i]) > 2:
+#             mismatch_matrix[i] = similarity(name_1[i], name_2[i])
+#             if len(name_1[i]) or len(name_2[i]):
+#                 bool_mismatch_matrix[i] = similarity(name_1[i], name_2[i]) > 0.8
+#             else:
+#                 bool_mismatch_matrix[i] = similarity(name_1[i], name_2[i]) > 0.7
+#
+#         elif 0 < len(name_1[i]) <= 2 or 0 < len(name_2[i]) <= 2:
+#             short_word = name_1[i] if len(name_1[i]) <= len(name_2[i]) else name_2[i]
+#             long_word = name_1[i] if len(name_1[i]) >= len(name_2[i]) else name_2[i]
+#
+#             if long_word[:len(short_word)] == short_word:
+#                 mismatch_matrix[i] = 1
+#                 bool_mismatch_matrix[i] = True
+#             else:
+#                 mismatch_matrix[i] = 0
+#                 bool_mismatch_matrix[i] = False
+#
+#     print(mismatch_matrix)
+#     if bool_mismatch_matrix.all():
+#         return True
+#     else:
+#         return False
 
 #
 # def my_dist_cached(a, b) -> int:
